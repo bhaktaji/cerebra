@@ -1,0 +1,56 @@
+name: Build & Release Signed Android APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-android:
+    name: Compile & Sign Cerebra Release APK
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compile, Align, Sign & Verify Release APK
+        run: |
+          bash android/build-release-apk.sh
+          cp cerebra-release.apk public/cerebra-release.apk
+
+      - name: Commit Signed Release APK to Repository
+        run: |
+          git config user.name "Cerebra Release Bot"
+          git config user.email "release@cerebra.app"
+          git add -f cerebra-release.apk public/cerebra-release.apk
+          git diff --staged --quiet || (git commit -m "chore(release): bundle signed cerebra-release.apk v1.0.0 [skip ci]" && git push origin HEAD:main)
+
+      - name: Upload Signed Release APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cerebra-release-apk
+          path: cerebra-release.apk
+          if-no-files-found: error
+
+      - name: Upload Debug APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cerebra-debug-apk
+          path: cerebra-debug.apk
+          if-no-files-found: error
+
+      - name: Publish Signed Release APK to GitHub Releases (v1.0.0)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create v1.0.0 cerebra-release.apk cerebra-debug.apk \
+            --title "Cerebra v1.0.0 — Signed Android Release APK (10 Games, 10,000 Levels)" \
+            --notes "Official signed Android Release APK (\`cerebra-release.apk\`) for **Cerebra: 10,000-Level Cognitive Training Suite**. Download \`cerebra-release.apk\` directly to your Android phone and tap to install." || \
+          gh release upload v1.0.0 cerebra-release.apk cerebra-debug.apk --clobber
