@@ -1,0 +1,30 @@
+# Node & Vite
+node_modules/
+build/
+dist/
+dev-dist/
+coverage/
+*.log
+
+# Environment Variables
+.env*
+!.env.example
+
+# OS & Editor
+.DS_Store
+.idea/
+.vscode/
+
+# Android & Gradle Build Artifacts
+.gradle/
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+*.apk
+*.aab
+*.ap_
+*.dex
+*.jks
+*.keystore
+
